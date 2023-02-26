@@ -1,0 +1,25 @@
+{
+  "name": "jaswant-codes",
+  "version": "1.0.0",
+  "description": "Bingo ",
+  "main": "app.js",
+  "scripts": {
+    "dev": "nodemon app.js",
+    "start": "node app.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jaswant2111058/jaswant-codes.git"
+  },
+  "author": "jassi",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/jaswant2111058/jaswant-codes/issues"
+  },
+  "homepage": "https://github.com/jaswant2111058/jaswant-codes#readme",
+  "dependencies": {
+    "express": "^4.18.2",
+    "nodemon": "^2.0.20",
+    "socket.io": "^4.5.4"
+  }
+}
