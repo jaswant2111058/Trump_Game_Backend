@@ -1,7 +1,7 @@
 {
-  "name": "jaswant-codes",
+  "name": "jassi-trump-card",
   "version": "1.0.0",
-  "description": "Bingo ",
+  "description": "Cards-game",
   "main": "app.js",
   "scripts": {
     "dev": "nodemon app.js",

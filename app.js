@@ -13,13 +13,6 @@ const io = require('socket.io')(http,{
       methods: ['GET', 'POST']
     }
 });
-const players = require("./players")
-
-const player1 = players.player1
-const player2 = players.player2
-const player3 = players.player3
-const player4 = players.player4
-
 
 
 io.on('connection',socket=>{
@@ -31,14 +24,14 @@ io.on('connection',socket=>{
  
                 socket.join(`room${code[1]}`);
                 socket.code = code[1]
-                console.log({creater:socket.id,code:code})
+             //   console.log({creater:socket.id,code:code})
                 socket.name = code[0]
     })
 
     socket.on("Join",async code=>{
                         socket.join(`room${code.code}`);
                         socket.name=code.name
-                        socket.code=code
+                        socket.code=code.code
                         const client = await io.in(`room${code.code}`).fetchSockets()
                        // console.log(client[client.length].name)
                         io.to(socket.id).emit("SetPlayer1",client[0].name);
@@ -49,20 +42,30 @@ io.on('connection',socket=>{
                                 io.to(`room${code.code}`).emit(`SetPlayer${length+1}`,client[length].name)
                             }
                         }
-                        console.log({joiner:socket.id,code:code})
+                       // console.log({joiner:socket.id,code:code})
     })  
     socket.on("Essentials",async data=>{
-       
+    try{   
         socket.trumpPlayer = data.trump
-        socket.teams=data.teams
-        const client = await io.in(`room${code}`).fetchSockets()
-    console.log(client[0].id,client[1].id,client[2].id,client[3].id)
-    io.to(client[0].id).emit("play",player1);
-    io.to(client[1].id).emit("play",player2);
-    io.to(client[2].id).emit("play",player3);
-    io.to(client[3].id).emit("play",player4);
+        socket.teams=data.teams 
+        const client = await io.in(`room${socket.code}`).fetchSockets()
+       // console.log(client[0].id,client[1].id,client[2].id,client[3].id)
+    if((data.teams%2)==1)
+    {
+        io.to(client[1].id).emit("play",2);
+        io.to(client[2].id).emit("play",3);
+    }
+    else
+    {
+        io.to(client[1].id).emit("play",3);
+        io.to(client[2].id).emit("play",2);
+    }
+    io.to(client[3].id).emit("play",4);
        // io.to(`room${socket.code}`).emit('play',data)
-                       
+}
+catch{
+   // console.log('not define error')
+}                   
 }) 
 
 
@@ -74,16 +77,59 @@ socket.on('TrumpPlayer',num=>{
 
 
 
+socket.on('start',num=>{
+
+    io.to(`room${socket.code}`).emit('start',num)
+         
+})
+
+
+
 socket.on("SendCard",async code=>{
-    console.log(code)
+   // console.log(code)
     
     try{
-        const client = await io.in(`room${code}`).fetchSockets()
-    console.log(client[0].id,client[1].id,client[2].id,client[3].id)
-    io.to(client[0].id).emit("CardArray",player1);
-    io.to(client[1].id).emit("CardArray",player2);
-    io.to(client[2].id).emit("CardArray",player3);
-    io.to(client[3].id).emit("CardArray",player4);
+        const client = await io.in(`room${socket.code}`).fetchSockets()
+        var arr = [];
+        for(let i=0;i<52;i++)
+        {
+          arr[i]=i+1;
+        }
+           arr.sort(function()
+           {return 0.5- Math.random()});
+        
+        const player1=[] 
+        for(let i=0;i<13;i++)
+        {
+          player1[i]=arr[i];
+        }
+        let player2=[]
+        for(let i=0;i<13;i++)
+        {
+          player2[i]=arr[i+13];
+        }
+        let player3=[]
+        for(let i=0;i<13;i++)
+        {
+          player3[i]=arr[i+26];
+        }
+        let player4=[]
+        for(let i=0;i<13;i++)
+        {
+          player4[i]=arr[i+39];
+        }
+        const name1 =
+    {
+        name1:client[0].name,
+        name2:client[1].name,
+        name3:client[2].name,
+        name4:client[3].name
+    }
+    io.to(client[0].id).emit("CardArray",[player1,name1]);
+    io.to(client[1].id).emit("CardArray",[player2,name1]);
+    io.to(client[2].id).emit("CardArray",[player3,name1]);
+    io.to(client[3].id).emit("CardArray",[player4,name1]);
+
     }
     catch{
         console.log('there are not 4 player')
@@ -91,112 +137,104 @@ socket.on("SendCard",async code=>{
 })   
  
 
-socket.on('trumpSuit',async play=>{
+socket.on('trumpSuit', play=>{
 
     socket.trumpSuit=play
-    io.to(`room${socket.code}`).emit('trumpSuit',play)
+    io.to(`room${socket.code}`).emit('trumpSuits',play)
 })
-socket.on('Suit',async play=>{
+socket.on('Suit', play=>{
 
     socket.trumpSuit=play
 })
 
 
-
-
-socket.on('trumpSuit',async trumpSuit=>{
-
-    io.to(`room${socket.code}`).emit('play',)
-
-
-
-})
-
-
-
+ socket.on('switch',data=>{
+             //   console.log(data)
+             io.to(`room${socket.code}`).emit('Switch',data)  
+          })
+           
 
 
 socket.on('CheckHand',async value=>{
 
         try{
-            var client = await io.in(`room${socket.code}`).fetchSockets()
+                    var num = value.Cardnum;
             
-            if(parseInt(value.value/13)==client[0].trumpSuit)
+            if((parseInt((value.Cardnum-1)/13))===(socket.trumpSuit-1))
             {
-                value.value=value.value+52;
-            }            
-            socket.HandCheck=value.value
-            if(value.turn==4)
+                num=value.Cardnum+230;
+            }
+            
+            else if(value.suit===(parseInt((value.Cardnum-1)/13)))
             {
+                num = value.Cardnum+52
+            }
+            socket.HandCheck=num
+         //  console.log(socket.HandCheck,(socket.trumpSuit-1),(parseInt((value.Cardnum-1)/13)),num)
+            if(value.inning==0)
+            {
+                
              client = await io.in(`room${socket.code}`).fetchSockets()
             const HandCheck =[
                 client[0].HandCheck,
                 client[1].HandCheck,
                 client[2].HandCheck,
                 client[3].HandCheck,
-
             ]
             if(HandCheck.length<=4)
-            {
+            {  // console.log(value)
                 let max = Math.max(HandCheck[0],HandCheck[1],HandCheck[2],HandCheck[3])
                let index= HandCheck.indexOf(max)
-               index=index%4+2;
-               if(index==1||index==3)
+               if((client[0].teams%2)!==1&&(index==1||index==2))
                {
-                index=1
-               socket.emit("Hand",index)
+                index=(index%2)+1
                }
-               else{
-                index = 2
-                socket.emit("Hand",index)
-               }
+            const data  = {
+                win:index,
+                index:index,
+                Cardnum:value.Cardnum,
+                Nextturn:index,
+                turn:value.turn,
+                inning:value.inning,
+                count:value.count,
             }
+                io.in(`room${socket.code}`).emit("Hand",data)
+              //  console.log(index,HandCheck[0],HandCheck[1],HandCheck[2],HandCheck[3])
+             }
+            
         }
         else
         {
-            socket.emit("Hand",0)
-        }
+            const data  = {
+                win:null,
+                Cardnum:value.Cardnum,
+                index:value.Nextturn,
+                turn:value.turn,
+                inning:value.inning,
+                count:value.count,
+            }
+            io.in(`room${socket.code}`).emit("Hand",data)
+                 }
         }
         catch{
-            socket.emit("Hand",0)
-        }
-        
-    
+            const data  = {
+                index:null,
+                Cardnum:value.Cardnum,
+                Nextturn:value.Nextturn,
+                turn:value.turn,
+                inning:value.inning,
+                count:value.count,
+            }
+            io.in(`room${socket.code}`).emit("Hand",data)
+        } 
 })
 
-
-
-
-
-    
-})
-
-
- app.get("/",function(req,res){
+socket.on('disconnect', function() {
+    const data = "game can't continue"
+    io.in(`room${socket.code}`).emit("discon",data)
+  })
 
     
-      
-    res.sendFile(static1+"/testing.html");
-});
-
-app.get("/player1",(req,res)=>
-{
-    res.sendFile(static1+"/testclient.html");
-    
-})
-app.post("/player1",async(req,res)=>
-{       
-
-    res.sendFile(static1+"/bingo.html");  
-})
-
- app.get("/player2",function(req,res){
-      
-     res.sendFile(static1+"/bingo.html");
- });
- app.post("/player2",(req,res)=>
-{       
-    res.sendFile(static1+"/bingo.html");  
 })
 
 http.listen(port, function(){
